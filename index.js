@@ -39,7 +39,7 @@ app.get('/resources/:name', (req, res) => {
     return services[resource.service](resource);
   })
   .then(serviceData => {
-    let response = {aaaa: 'aaaaaaaaa'};
+    let response = {};
 
     for (let key in serviceData) {
       if (resourceResponse.indexOf(key) > -1) {

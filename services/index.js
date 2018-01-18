@@ -9,7 +9,7 @@ module.exports = {
   'rest': Bluebird.promisify((resource, cb) => {
       request.post(`${resource.options.url}:${resource.options.port}/${resource.options.uri}`,
       {'form': resource.request},
-      (err, res, body) => {
+      (err, res) => {
         if (err) {
           console.log(err);
           cb(err);
@@ -23,39 +23,26 @@ module.exports = {
         }
       });
     }),
-  // 'soap': Bluebird.promisify((resource, cb) => {
-  //   return soap.createClientAsync(resource.options.wsdl)
-  //   .then(client => {
-  //     return client[resource.options.method](resource.options.soapresource.options)
-  //     .then(result => {
-       
-  //       });
-  //     });
-  //   })
-  //   .catch(e => {
-  //     console.log(e);
-  //     return e;
-  //   });
-  // }),
-  // 'mongodb':  Bluebird.promisify((resource, cb) => {
-  //   let model = mongoose.model(resource.options.modelName, resource.options.model);
-  //   return model[resource.options.method](resource.options.query)
-  //   .then(data => {
-  //     let response = {};
+  'soap': Bluebird.promisify((resource, cb) => {
+    soap.createClientAsync(resource.options.wsdl)
+    .then(client => {
+      client = Bluebird.promisifyAll(client);
 
-  //     for (let prop in data) {
-  //       if (resource.options.response.indexOf(prop) > -1) {
-  //         response[prop] = data[prop];
-  //       }
-  //     }
+      return client[`${resource.options.method}Async`](resource.request);
+    })
+    .then(result => {
+      cb(null, result);
+    })
+    .catch(e  => cb(e));
+  }),
+  'mongodb':  Bluebird.promisify((resource, cb) => {
+    let model = mongoose.model(resource.options.modelName, new mongoose.Schema(resource.options.model));
 
-  //     return setImmediate(() => {
-  //       return response;
-  //     });
-  //   })
-  //   .catch(e => {
-  //     console.error(e);
-  //     return e;
-  //   });
-  // })
+    return model[resource.options.method](resource.options.query)
+    .then(data => {
+      model = {};
+      cb(null, data);
+    })
+    .catch(e  => cb(e));
+  })
 };
