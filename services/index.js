@@ -1,63 +1,61 @@
 'use strict';
 
-const request = require('request');
-const soap = require('soap');
 const Bluebird = require('bluebird');
+const request = Bluebird.promisifyAll(require('request'));
+const soap = require('soap');
 const mongoose = require('mongoose');
 
 module.exports = {
-  'rest': Bluebird.promisify(options => {
-    return request[options.method](options.url, options.httpOptions)
-    .then((res, body) => {
-      let response = {};
-      for (let prop in body) {
-        if (options.response.indexOf(prop) > -1) {
-          response[prop] = body[prop];
+  'rest': Bluebird.promisify((resource, cb) => {
+      request.post(`${resource.options.url}:${resource.options.port}/${resource.options.uri}`,
+      {'form': resource.request},
+      (err, res, body) => {
+        if (err) {
+          console.log(err);
+          cb(err);
         }
 
-      }
-
-      return setImmediate(() => {
-        return response;
-      });  
-    })
-    .catch(e => e);
-  }),
-  'soap': Bluebird.promisify(options => {
-    return soap.createClientAsync(options.wsdl)
-    .then(client => {
-      return client[options.method](options.soapOptions)
-      .then(result => {
-        let response = {};
-        for (let prop in result) {
-          if (options.response.indexOf(prop) > -1) {
-            response[prop] = result.prop;
-          }
+        try {
+          let response = JSON.parse(res.body);
+          cb(null, response);
+        } catch(e) {
+          cb(e);
         }
-
-        return setImmediate(() => {
-          return response;
-        });
       });
-    })
-    .catch(e => e);
-  }),
-  'mongodb':  Bluebird.promisify(options => {
-    let model = mongoose.model(options.modelName, options.model);
-    return model[options.method](options.query)
-    .then(data => {
-      let response = {};
+    }),
+  // 'soap': Bluebird.promisify((resource, cb) => {
+  //   return soap.createClientAsync(resource.options.wsdl)
+  //   .then(client => {
+  //     return client[resource.options.method](resource.options.soapresource.options)
+  //     .then(result => {
+       
+  //       });
+  //     });
+  //   })
+  //   .catch(e => {
+  //     console.log(e);
+  //     return e;
+  //   });
+  // }),
+  // 'mongodb':  Bluebird.promisify((resource, cb) => {
+  //   let model = mongoose.model(resource.options.modelName, resource.options.model);
+  //   return model[resource.options.method](resource.options.query)
+  //   .then(data => {
+  //     let response = {};
 
-      for (let prop in data) {
-        if (options.response.indexOf(prop) > -1) {
-          response[prop] = data[prop];
-        }
-      }
+  //     for (let prop in data) {
+  //       if (resource.options.response.indexOf(prop) > -1) {
+  //         response[prop] = data[prop];
+  //       }
+  //     }
 
-      return setImmediate(() => {
-        return response;
-      });
-    })
-    .catch(e => e);
-  })
+  //     return setImmediate(() => {
+  //       return response;
+  //     });
+  //   })
+  //   .catch(e => {
+  //     console.error(e);
+  //     return e;
+  //   });
+  // })
 };

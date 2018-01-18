@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 
-mongoose.Promise = require('bluebird');
+mongoose.Promise = Promise;
 
 function connect() {
   mongoose.connect('mongodb://localhost/allAPIs', {'useMongoClient': true});
